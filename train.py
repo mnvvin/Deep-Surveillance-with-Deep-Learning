@@ -1,3 +1,4 @@
+#Imports:
 from keras.preprocessing.image import img_to_array,load_img
 import numpy as np
 import glob
@@ -8,6 +9,7 @@ from keras.stae_models import Sequential
 from keras.callbacks import stae_modelCheckpoint, EarlyStopping
 import imutils
 
+#Initialize directory path variable and describe a function to process and store video frames:
 store_image=[]
 train_path='./train'
 fps=5
@@ -22,6 +24,7 @@ def store_inarray(image_path):
     gray=0.2989*image[:,:,0]+0.5870*image[:,:,1]+0.1140*image[:,:,2]
     store_image.append(gray)
 
+#Extract frames from video and call store function:
 for video in train_videos:
         os.system( 'ffmpeg -i {}/{} -r 1/{}  {}/frames/%03d.jpg'.format(train_path,video,fps,train_path))
         images=os.listdir(train_images_path)
@@ -29,6 +32,7 @@ for video in train_videos:
             image_path=framepath+ '/'+ image
 	        store_inarray(image_path)
 
+#Store the store_image list in a numpy file “training.npy”:
 store_image=np.array(store_image)
 a,b,c=store_image.shape
 store_image.resize(b,c,a)
@@ -36,7 +40,7 @@ store_image=(store_image-store_image.mean())/(store_image.std())
 store_image=np.clip(store_image,0,1)
 np.save('training.npy',store_image)
 
-
+#Create spatial autoencoder architecture:
 #define stae_model
 
 stae_model=Sequential()
@@ -50,7 +54,7 @@ stae_model.add(Conv3DTranspose(filters=1,kernel_size=(11,11,1),strides=(4,4,1),p
 
 stae_model.compile(optimizer='adam',loss='mean_squared_error',metrics=['accuracy'])
 
-
+#Train the autoencoder on the “training.npy” file and save the model with name “saved_model.h5”:
 training_data=np.load('training.npy')
 frames=training_data.shape[2]
 frames=frames-frames%10
